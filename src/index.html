@@ -117,7 +117,6 @@
             z-index: 20;
             font-weight: bold;
             transition: outline 0.1s;
-            overflow: hidden;
             text-align: center;
         }
 
@@ -416,23 +415,12 @@
                         <input type="text" class="form-control form-control-sm" id="fixName"
                             placeholder="Name (e.g., Window 1)">
                     </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <label class="form-label small mb-0 text-secondary" data-i18n="type">Type</label>
-                            <select class="form-select form-select-sm" id="fixType">
-                                <option value="window" data-i18n="window">Window</option>
-                                <option value="door" data-i18n="door">Door</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small mb-0 text-secondary" data-i18n="wall">Wall</label>
-                            <select class="form-select form-select-sm" id="fixWall">
-                                <option value="top" data-i18n="top">Top</option>
-                                <option value="bottom" data-i18n="bottom">Bottom</option>
-                                <option value="left" data-i18n="left">Left</option>
-                                <option value="right" data-i18n="right">Right</option>
-                            </select>
-                        </div>
+                    <div class="mb-2">
+                        <label class="form-label small mb-0 text-secondary" data-i18n="type">Type</label>
+                        <select class="form-select form-select-sm" id="fixType">
+                            <option value="window" data-i18n="window">Window</option>
+                            <option value="door" data-i18n="door">Door</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small mb-0 text-secondary" data-i18n="size">Size (cm)</label>
@@ -539,7 +527,7 @@
                 'ruler': 'Free Ruler', 'show_grid': 'Show Grid', 'snap_grid': 'Snap to Grid', 'snap_walls': 'Snap to Walls',
                 'grid_size': 'Grid/Snap Size:', 'auto_dims': 'Auto Dimensions', 'new_obj': 'New Object', 'name_ph': 'Name (e.g., Table)',
                 'layer': 'Layer', 'color': 'Color', 'create_obj': 'Create Object', 'structures': 'Structures', 'type': 'Type',
-                'window': 'Window', 'door': 'Door', 'wall': 'Wall', 'top': 'Top', 'bottom': 'Bottom', 'left': 'Left', 'right': 'Right',
+                'window': 'Window', 'door': 'Door',
                 'size': 'Size (cm)', 'add_wall': 'Add to Wall', 'inspector': 'OBJECT INSPECTOR', 'layers_panel': 'LAYERS',
                 'settings_title': 'Settings', 'language': 'Language / Idioma', 'empty_obj': 'No objects added.', 'empty_layer': 'No layers active.',
                 'rotate': 'Rotate', 'rotate_room': 'Rotate Room'
@@ -550,7 +538,7 @@
                 'ruler': 'Régua Livre', 'show_grid': 'Mostrar Grade', 'snap_grid': 'Imã à Grade', 'snap_walls': 'Imã às Paredes',
                 'grid_size': 'Tamanho Imã/Grade:', 'auto_dims': 'Cotas Automáticas', 'new_obj': 'Novo Objeto', 'name_ph': 'Nome (Ex: Mesa)',
                 'layer': 'Camada', 'color': 'Cor', 'create_obj': 'Criar Objeto', 'structures': 'Estruturas Fixas', 'type': 'Tipo',
-                'window': 'Janela', 'door': 'Porta', 'wall': 'Parede', 'top': 'Superior', 'bottom': 'Inferior', 'left': 'Esquerda', 'right': 'Direita',
+                'window': 'Janela', 'door': 'Porta',
                 'size': 'Tamanho (cm)', 'add_wall': 'Adicionar à Parede', 'inspector': 'INSPETOR DE OBJETOS', 'layers_panel': 'CAMADAS',
                 'settings_title': 'Configurações', 'language': 'Idioma', 'empty_obj': 'Nenhum objeto adicionado.', 'empty_layer': 'Nenhuma camada ativa.',
                 'rotate': 'Rotacionar', 'rotate_room': 'Rotacionar Quarto'
@@ -561,7 +549,7 @@
                 'ruler': 'Régua Livre', 'show_grid': 'Mostrar Grelha', 'snap_grid': 'Atrair à Grelha', 'snap_walls': 'Atrair às Paredes',
                 'grid_size': 'Tamanho da Grelha:', 'auto_dims': 'Cotas Automáticas', 'new_obj': 'Novo Objeto', 'name_ph': 'Nome (Ex: Mesa)',
                 'layer': 'Camada', 'color': 'Cor', 'create_obj': 'Criar Objeto', 'structures': 'Estruturas', 'type': 'Tipo',
-                'window': 'Janela', 'door': 'Porta', 'wall': 'Parede', 'top': 'Cima', 'bottom': 'Baixo', 'left': 'Esquerda', 'right': 'Direita',
+                'window': 'Janela', 'door': 'Porta',
                 'size': 'Tamanho (cm)', 'add_wall': 'Adicionar à Parede', 'inspector': 'INSPETOR DE OBJETOS', 'layers_panel': 'CAMADAS',
                 'settings_title': 'Definições', 'language': 'Idioma', 'empty_obj': 'Nenhum objeto adicionado.', 'empty_layer': 'Nenhuma camada ativa.',
                 'rotate': 'Rodar', 'rotate_room': 'Rodar Divisão'
@@ -572,7 +560,7 @@
                 'ruler': 'Regla Libre', 'show_grid': 'Mostrar Cuadrícula', 'snap_grid': 'Ajustar a Cuadrícula', 'snap_walls': 'Ajustar a Paredes',
                 'grid_size': 'Tamaño Cuadrícula:', 'auto_dims': 'Cotas Automáticas', 'new_obj': 'Nuevo Objeto', 'name_ph': 'Nombre (Ej: Mesa)',
                 'layer': 'Capa', 'color': 'Color', 'create_obj': 'Crear Objeto', 'structures': 'Estructuras', 'type': 'Tipo',
-                'window': 'Ventana', 'door': 'Puerta', 'wall': 'Pared', 'top': 'Arriba', 'bottom': 'Abajo', 'left': 'Izquierda', 'right': 'Derecha',
+                'window': 'Ventana', 'door': 'Puerta',
                 'size': 'Tamaño (cm)', 'add_wall': 'Añadir a Pared', 'inspector': 'INSPECTOR DE OBJETOS', 'layers_panel': 'CAPAS',
                 'settings_title': 'Ajustes', 'language': 'Idioma', 'empty_obj': 'Ningún objeto añadido.', 'empty_layer': 'Ninguna capa activa.',
                 'rotate': 'Rotar', 'rotate_room': 'Rotar Cuarto'
@@ -583,7 +571,7 @@
                 'ruler': 'Règle Libre', 'show_grid': 'Afficher Grille', 'snap_grid': 'Accrocher à la Grille', 'snap_walls': 'Accrocher aux Murs',
                 'grid_size': 'Taille de la Grille:', 'auto_dims': 'Cotes Automatiques', 'new_obj': 'Nouvel Objet', 'name_ph': 'Nom (ex: Table)',
                 'layer': 'Calque', 'color': 'Couleur', 'create_obj': 'Créer Objet', 'structures': 'Structures', 'type': 'Type',
-                'window': 'Fenêtre', 'door': 'Porte', 'wall': 'Mur', 'top': 'Haut', 'bottom': 'Bas', 'left': 'Gauche', 'right': 'Droite',
+                'window': 'Fenêtre', 'door': 'Porte',
                 'size': 'Taille (cm)', 'add_wall': 'Ajouter au Mur', 'inspector': 'INSPECTEUR D\'OBJETS', 'layers_panel': 'CALQUES',
                 'settings_title': 'Paramètres', 'language': 'Langue', 'empty_obj': 'Aucun objet ajouté.', 'empty_layer': 'Aucun calque actif.',
                 'rotate': 'Pivoter', 'rotate_room': 'Pivoter la Pièce'
@@ -594,7 +582,7 @@
                 'ruler': 'Freies Lineal', 'show_grid': 'Raster anzeigen', 'snap_grid': 'Am Raster ausrichten', 'snap_walls': 'An Wänden ausrichten',
                 'grid_size': 'Rastergröße:', 'auto_dims': 'Auto-Bemaßung', 'new_obj': 'Neues Objekt', 'name_ph': 'Name (z.B. Tisch)',
                 'layer': 'Ebene', 'color': 'Farbe', 'create_obj': 'Objekt Erstellen', 'structures': 'Strukturen', 'type': 'Typ',
-                'window': 'Fenster', 'door': 'Tür', 'wall': 'Wand', 'top': 'Oben', 'bottom': 'Unten', 'left': 'Links', 'right': 'Rechts',
+                'window': 'Fenster', 'door': 'Tür',
                 'size': 'Größe (cm)', 'add_wall': 'Zur Wand hinzufügen', 'inspector': 'OBJEKT-INSPEKTOR', 'layers_panel': 'EBENEN',
                 'settings_title': 'Einstellungen', 'language': 'Sprache', 'empty_obj': 'Keine Objekte hinzugefügt.', 'empty_layer': 'Keine Ebenen aktiv.',
                 'rotate': 'Drehen', 'rotate_room': 'Raum Drehen'
@@ -605,7 +593,7 @@
                 'ruler': 'Righello Libero', 'show_grid': 'Mostra Griglia', 'snap_grid': 'Allinea alla Griglia', 'snap_walls': 'Allinea ai Muri',
                 'grid_size': 'Dim. Griglia:', 'auto_dims': 'Quote Automatiche', 'new_obj': 'Nuovo Oggetto', 'name_ph': 'Nome (es: Tavolo)',
                 'layer': 'Livello', 'color': 'Colore', 'create_obj': 'Crea Oggetto', 'structures': 'Strutture', 'type': 'Tipo',
-                'window': 'Finestra', 'door': 'Porta', 'wall': 'Muro', 'top': 'Sopra', 'bottom': 'Sotto', 'left': 'Sinistra', 'right': 'Destra',
+                'window': 'Finestra', 'door': 'Porta',
                 'size': 'Dimensione (cm)', 'add_wall': 'Aggiungi al Muro', 'inspector': 'ISPETTORE OGGETTI', 'layers_panel': 'LIVELLI',
                 'settings_title': 'Impostazioni', 'language': 'Lingua', 'empty_obj': 'Nessun oggetto aggiunto.', 'empty_layer': 'Nessun livello ativo.',
                 'rotate': 'Ruota', 'rotate_room': 'Ruota Stanza'
@@ -616,7 +604,7 @@
                 'ruler': 'Vrije Liniaal', 'show_grid': 'Raster Tonen', 'snap_grid': 'Uitlijnen op Raster', 'snap_walls': 'Uitlijnen op Muren',
                 'grid_size': 'Rastergrootte:', 'auto_dims': 'Auto Afmetingen', 'new_obj': 'Nieuw Object', 'name_ph': 'Naam (bijv. Tafel)',
                 'layer': 'Laag', 'color': 'Kleur', 'create_obj': 'Object Maken', 'structures': 'Structuren', 'type': 'Type',
-                'window': 'Raam', 'door': 'Deur', 'wall': 'Muur', 'top': 'Boven', 'bottom': 'Onder', 'left': 'Links', 'right': 'Rechts',
+                'window': 'Raam', 'door': 'Deur',
                 'size': 'Grootte (cm)', 'add_wall': 'Aan Muur Toevoegen', 'inspector': 'OBJECT INSPECTEUR', 'layers_panel': 'LAGEN',
                 'settings_title': 'Instellingen', 'language': 'Taal', 'empty_obj': 'Geen objecten toegevoegd.', 'empty_layer': 'Geen actieve lagen.',
                 'rotate': 'Draaien', 'rotate_room': 'Kamer Draaien'
@@ -627,7 +615,7 @@
                 'ruler': 'Wolna Linijka', 'show_grid': 'Pokaż Siatkę', 'snap_grid': 'Do Siatki', 'snap_walls': 'Do Ścian',
                 'grid_size': 'Rozmiar Siatki:', 'auto_dims': 'Auto Wymiary', 'new_obj': 'Nowy Obiekt', 'name_ph': 'Nazwa (np. Stół)',
                 'layer': 'Warstwa', 'color': 'Kolor', 'create_obj': 'Utwórz Obiekt', 'structures': 'Struktury', 'type': 'Typ',
-                'window': 'Okno', 'door': 'Drzwi', 'wall': 'Ściana', 'top': 'Góra', 'bottom': 'Dół', 'left': 'Lewo', 'right': 'Prawo',
+                'window': 'Okno', 'door': 'Drzwi',
                 'size': 'Rozmiar (cm)', 'add_wall': 'Dodaj do Ściany', 'inspector': 'INSPEKTOR OBIEKTÓW', 'layers_panel': 'WARSTWY',
                 'settings_title': 'Ustawienia', 'language': 'Język', 'empty_obj': 'Brak dodanych objektów.', 'empty_layer': 'Brak aktywnych warstw.',
                 'rotate': 'Obróć', 'rotate_room': 'Obróć Pokój'
@@ -638,7 +626,7 @@
                 'ruler': 'Fri Linjal', 'show_grid': 'Visa Rutnät', 'snap_grid': 'Fäst mot Rutnät', 'snap_walls': 'Fäst mot Väggar',
                 'grid_size': 'Rutnätsstorlek:', 'auto_dims': 'Auto-Mått', 'new_obj': 'Nytt Objekt', 'name_ph': 'Namn (t.ex. Bord)',
                 'layer': 'Lager', 'color': 'Färg', 'create_obj': 'Skapa Objekt', 'structures': 'Strukturer', 'type': 'Typ',
-                'window': 'Fönster', 'door': 'Dörr', 'wall': 'Vägg', 'top': 'Topp', 'bottom': 'Botten', 'left': 'Vänster', 'right': 'Höger',
+                'window': 'Fönster', 'door': 'Dörr',
                 'size': 'Storlek (cm)', 'add_wall': 'Lägg till på Vägg', 'inspector': 'OBJEKTINSPEKTÖR', 'layers_panel': 'LAGER',
                 'settings_title': 'Inställningar', 'language': 'Språk', 'empty_obj': 'Inga objekt tillagda.', 'empty_layer': 'Inga aktiva lager.',
                 'rotate': 'Rotera', 'rotate_room': 'Rotera Rum'
@@ -649,7 +637,7 @@
                 'ruler': 'Линейка', 'show_grid': 'Показать Сетку', 'snap_grid': 'Привязка к Сетке', 'snap_walls': 'Привязка к Стенам',
                 'grid_size': 'Размер Сетки:', 'auto_dims': 'Авто-Размеры', 'new_obj': 'Новый Объект', 'name_ph': 'Название (напр. Стол)',
                 'layer': 'Слой', 'color': 'Цвет', 'create_obj': 'Создать Объект', 'structures': 'Структуры', 'type': 'Тип',
-                'window': 'Окно', 'door': 'Дверь', 'wall': 'Стена', 'top': 'Верх', 'bottom': 'Низ', 'left': 'Лево', 'right': 'Право',
+                'window': 'Окно', 'door': 'Дверь',
                 'size': 'Размер (см)', 'add_wall': 'На Стену', 'inspector': 'ИНСПЕКТОР ОБЪЕКТОВ', 'layers_panel': 'СЛОИ',
                 'settings_title': 'Настройки', 'language': 'Язык', 'empty_obj': 'Нет объектов.', 'empty_layer': 'Нет активных слоев.',
                 'rotate': 'Повернуть', 'rotate_room': 'Повернуть Комнату'
@@ -1031,13 +1019,13 @@
 
         function addFixture() {
             const type = document.getElementById('fixType').value;
-            const wall = document.getElementById('fixWall').value;
+            const wall = 'top';
             const size = parseInt(document.getElementById('fixSize').value) || 80;
 
             const inputName = document.getElementById('fixName').value;
             const name = inputName ? inputName : t(type);
 
-            let pos = (wall === 'top' || wall === 'bottom') ? room.w / 2 - size / 2 : room.h / 2 - size / 2;
+            let pos = room.w / 2 - size / 2;
 
             const newId = fixtureIdCounter++;
             fixtures.push({ id: newId, name, type, wall, size, pos, thickness: 12, flip: false, el: null, locked: false });
@@ -1251,8 +1239,7 @@
                 div.innerHTML = `
                     <div class="card-body p-2 bg-dark rounded d-flex flex-column gap-2">
                         <div class="d-flex align-items-center justify-content-between gap-1">
-                            <input type="text" class="form-control form-control-sm fw-bold border-secondary bg-dark text-light" value="${fix.name}" onchange="updateFixtureProp(${fix.id}, 'name', this.value)">
-                            <span class="badge bg-secondary text-uppercase" style="font-size: 0.6rem;">${t(fix.wall)}</span>
+                            <input type="text" class="form-control form-control-sm fw-bold border-secondary bg-dark text-light w-100" value="${fix.name}" onchange="updateFixtureProp(${fix.id}, 'name', this.value)">
                         </div>
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="input-group input-group-sm" style="width: 100px;">
