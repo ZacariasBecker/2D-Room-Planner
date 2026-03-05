@@ -216,6 +216,26 @@
         .layer-item:hover {
             background-color: #3e3e42;
         }
+
+        /* Footer */
+        .app-footer {
+            background-color: var(--ps-bg-header);
+            border-top: 1px solid var(--ps-border);
+            height: 30px;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .app-footer a {
+            color: #0d6efd;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .app-footer a:hover {
+            color: #0a58ca;
+            text-decoration: underline;
+        }
     </style>
 </head>
 
@@ -432,6 +452,16 @@
 
     </div>
 
+    <footer class="app-footer d-flex align-items-center justify-content-center px-3">
+        <span class="small">
+            Powered by
+            <a href="https://github.com/ZacariasBecker/2D-Room-Planner" target="_blank" rel="noopener noreferrer"
+                class="fw-bold">
+                <i class="bi bi-github me-1"></i>Zacarias Becker
+            </a>
+        </span>
+    </footer>
+
     <div class="modal fade" id="settingsModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content bg-dark text-light border-secondary">
@@ -551,7 +581,7 @@
                 'layer': 'Livello', 'color': 'Colore', 'create_obj': 'Crea Oggetto', 'structures': 'Strutture', 'type': 'Tipo',
                 'window': 'Finestra', 'door': 'Porta', 'wall': 'Muro', 'top': 'Sopra', 'bottom': 'Sotto', 'left': 'Sinistra', 'right': 'Destra',
                 'size': 'Dimensione (cm)', 'add_wall': 'Aggiungi al Muro', 'inspector': 'ISPETTORE OGGETTI', 'layers_panel': 'LIVELLI',
-                'settings_title': 'Impostazioni', 'language': 'Lingua', 'empty_obj': 'Nessun oggetto aggiunto.', 'empty_layer': 'Nessun livello attivo.',
+                'settings_title': 'Impostazioni', 'language': 'Lingua', 'empty_obj': 'Nessun oggetto aggiunto.', 'empty_layer': 'Nessun livello ativo.',
                 'rotate': 'Ruota'
             },
             'nl': {
@@ -573,7 +603,7 @@
                 'layer': 'Warstwa', 'color': 'Kolor', 'create_obj': 'Utwórz Obiekt', 'structures': 'Struktury', 'type': 'Typ',
                 'window': 'Okno', 'door': 'Drzwi', 'wall': 'Ściana', 'top': 'Góra', 'bottom': 'Dół', 'left': 'Lewo', 'right': 'Prawo',
                 'size': 'Rozmiar (cm)', 'add_wall': 'Dodaj do Ściany', 'inspector': 'INSPEKTOR OBIEKTÓW', 'layers_panel': 'WARSTWY',
-                'settings_title': 'Ustawienia', 'language': 'Język', 'empty_obj': 'Brak dodanych obiektów.', 'empty_layer': 'Brak aktywnych warstw.',
+                'settings_title': 'Ustawienia', 'language': 'Język', 'empty_obj': 'Brak dodanych objektów.', 'empty_layer': 'Brak aktywnych warstw.',
                 'rotate': 'Obróć'
             },
             'sv': {
@@ -870,7 +900,7 @@
             if (obj && !obj.locked) { const t = obj.w; obj.w = obj.h; obj.h = t; renderObjects(); updateSidebarLists(); saveState(); }
         }
 
-        function removeObject(id) { objects = objects.filter(o => o.id !== id); selectedObjects.delete(id); renderObjects(); updateSidebarLists(); saveState(); }
+        function removeObject(id) { objects = objects.filter(o => !selectedObjects.has(o.id)); selectedObjects.clear(); renderObjects(); updateSidebarLists(); saveState(); }
 
         function updateObjectProp(id, prop, value) {
             const obj = objects.find(o => o.id === id); if (!obj) return;

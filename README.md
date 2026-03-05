@@ -4,6 +4,12 @@ A powerful, interactive 2D interior design and room planning web application. Bu
 
 Designed for precision, it features a layer system, collision detection, dynamic dimensioning, and project state management.
 
+## 🚀 Live Demo
+
+**Access the application here:** [https://room-planner-gamma.vercel.app/](https://room-planner-gamma.vercel.app/)
+
+---
+
 ## ✨ Key Features
 
 ### 🛠️ Advanced Object Management
@@ -41,3 +47,28 @@ The UI is inspired by professional design software, featuring a dark theme by de
 - **Right Sidebar (Inspector):** \* _Object Inspector:_ Edit dimensions, layer, color, name, rotation, and lock status of existing objects.
   - _Layers Panel:_ View active layers and toggle their visibility with the eye icon.
 - **Main Canvas:** The interactive grid where the design comes to life.
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut               | Action                                   |
+| :--------------------- | :--------------------------------------- |
+| `Click + Drag`         | Move a single object or structure.       |
+| `Shift + Click`        | Add object to current selection group.   |
+| `Ctrl + Z`             | Undo the last action.                    |
+| `Ctrl + Y`             | Redo the last undone action.             |
+| `Delete` / `Backspace` | Delete the currently selected object(s). |
+
+## 🛠️ Tech Stack
+
+- **HTML5** (Structure and Canvas)
+- **CSS3 & Bootstrap 5** (Styling, Dark Mode, and Layout)
+- **Bootstrap Icons** (UI Iconography)
+- **Vanilla JavaScript (ES6+)** (State management, drag-and-drop logic, collision math, and i18n)
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
+
+---
+
+_Developed by Zacarias Becker._
