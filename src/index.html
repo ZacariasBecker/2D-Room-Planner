@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Room Planner - Dark Mode</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --ps-bg-main: #1e1e1e;
+            --ps-bg-panel: #252526;
+            --ps-bg-header: #333333;
+            --ps-border: #444444;
+            --room-bg: #e9ecef;
+            --room-border: #adb5bd;
+            --danger-bg: #ffcccc;
+        }
+
+        body {
+            background-color: var(--ps-bg-main);
+            overflow: hidden;
+            user-select: none;
+            color: #cccccc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Top Bar */
+        .topbar {
+            background-color: var(--ps-bg-header);
+            border-bottom: 1px solid var(--ps-border);
+            height: 60px;
+        }
+
+        /* Asides */
+        .sidebar-left {
+            width: 340px;
+            background-color: var(--ps-bg-panel);
+            border-right: 1px solid var(--ps-border);
+            overflow-y: auto;
+        }
+
+        .sidebar-right {
+            width: 350px;
+            background-color: var(--ps-bg-panel);
+            border-left: 1px solid var(--ps-border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Canvas */
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+            padding: 60px;
+            position: relative;
+            background-image: radial-gradient(#444 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        #roomWrapper {
+            position: relative;
+            transition: width 0.2s, height 0.2s;
+        }
+
+        #room {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: var(--room-bg);
+            border: 4px solid var(--room-border);
+            box-sizing: content-box;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.2s, border-color 0.2s;
+            transform-origin: top left;
+        }
+
+        /* Objetos */
+        .room-object {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: rgba(0, 0, 0, 0.8);
+            cursor: grab;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            text-align: center;
+            padding: 2px;
+            overflow: hidden;
+            border-radius: 4px;
+            transition: outline 0.1s;
+        }
+
+        .room-object:active {
+            cursor: grabbing;
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .room-object.selected-obj {
+            outline: 3px solid #0d6efd;
+            z-index: 999 !important;
+        }
+
+        /* Fixtures (Portas/Janelas) */
+        .fixture {
+            position: absolute;
+            background-color: #5bc0de;
+            border: 2px solid #2c3e50;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            color: #000;
+            z-index: 20;
+            font-weight: bold;
+        }
+
+        .fixture.door {
+            background-color: #f0ad4e;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+
+        /* Linhas de Cota */
+        .dim-line {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #e74c3c;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .dim-line.horizontal {
+            border-bottom: 1.5px dashed #e74c3c;
+            height: 25px;
+        }
+
+        .dim-line.vertical {
+            border-right: 1.5px dashed #e74c3c;
+            width: 25px;
+            flex-direction: column;
+        }
+
+        .dim-line span {
+            background-color: #252526;
+            color: #fff;
+            padding: 2px 4px;
+            border-radius: 4px;
+            white-space: nowrap;
+            border: 1px solid #444;
+        }
+
+        .color-picker-sm {
+            padding: 0;
+            height: 30px;
+            border: none;
+            background: none;
+        }
+
+        body.ruler-active #room,
+        body.ruler-active .room-object,
+        body.ruler-active .fixture {
+            cursor: crosshair !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--ps-bg-panel);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        .card {
+            background-color: #2d2d30;
+            border-color: var(--ps-border);
+        }
+
+        .form-control,
+        .form-select {
+            background-color: #3e3e42;
+            color: #fff;
+            border-color: #555;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: #3e3e42;
+            color: #fff;
+            border-color: #0d6efd;
+            box-shadow: none;
+        }
+
+        .layer-item:hover {
+            background-color: #3e3e42;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column vh-100">
+
+    <header class="topbar d-flex align-items-center justify-content-between px-3 shadow-sm z-3">
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-primary me-3 fs-5"><i class="bi bi-house-gear-fill me-1"></i> <span
+                    data-i18n="app_title">2D Room Planner</span></span>
+
+            <button class="btn btn-outline-secondary btn-sm" onclick="undo()" title="Undo (Ctrl+Z)"><i
+                    class="bi bi-arrow-counterclockwise"></i></button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="redo()" title="Redo (Ctrl+Y)"><i
+                    class="bi bi-arrow-clockwise"></i></button>
+            <div class="vr mx-1 text-secondary"></div>
+            <button class="btn btn-primary btn-sm fw-bold" onclick="exportProject()" data-i18n="save">Save</button>
+            <button class="btn btn-outline-primary btn-sm fw-bold"
+                onclick="document.getElementById('importFile').click()" data-i18n="import">Import</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importProject(event)">
+        </div>
+
+        <div class="d-flex align-items-center gap-4">
+            <input type="text" id="projectName"
+                class="form-control form-control-sm bg-dark text-light border-secondary text-center fw-bold"
+                value="new project" style="width: 200px;">
+
+            <div class="d-flex gap-3 text-center" style="font-size: 0.85rem;">
+                <div><span class="text-secondary" data-i18n="total_area">Total Area:</span> <strong class="text-light"
+                        id="areaTotal">0.00</strong> m²</div>
+                <div><span class="text-secondary" data-i18n="occupied">Occupied:</span> <strong class="text-warning"
+                        id="areaOcc">0.00</strong> m²</div>
+                <div><span class="text-secondary" data-i18n="free">Free:</span> <strong class="text-success"
+                        id="areaFree">0.00</strong> m²</div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-secondary small" data-i18n="zoom">Zoom:</span>
+            <div class="btn-group btn-group-sm me-2">
+                <button class="btn btn-secondary" onclick="setZoom(0.8)"><i class="bi bi-dash"></i></button>
+                <span id="zoomVal" class="input-group-text bg-dark text-light border-secondary"
+                    style="width: 65px; justify-content: center;">100%</span>
+                <button class="btn btn-secondary" onclick="setZoom(1.25)"><i class="bi bi-plus"></i></button>
+            </div>
+            <div class="vr mx-1 text-secondary"></div>
+            <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal"
+                title="Settings"><i class="bi bi-gear-fill"></i></button>
+        </div>
+    </header>
+
+    <div class="d-flex flex-grow-1 overflow-hidden">
+
+        <aside class="sidebar-left p-3">
+
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body p-3">
+                    <h6 class="card-title fw-bold text-light mb-3"><i class="bi bi-rulers me-2"></i><span
+                            data-i18n="room_dim">Room Dimensions</span></h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small mb-0 text-secondary" data-i18n="width">Width (cm)</label>
+                            <input type="number" class="form-control form-control-sm" id="roomW" value="400"
+                                onchange="updateRoom(true)">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-0 text-secondary" data-i18n="length">Length (cm)</label>
+                            <input type="number" class="form-control form-control-sm" id="roomH" value="300"
+                                onchange="updateRoom(true)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body p-3">
+                    <h6 class="card-title fw-bold text-light mb-3"><i class="bi bi-tools me-2"></i><span
+                            data-i18n="tools">Tools</span></h6>
+                    <button id="btnRuler" class="btn btn-sm btn-outline-info w-100 mb-3 fw-bold"
+                        onclick="toggleRuler()"><i class="bi bi-rulers"></i> <span data-i18n="ruler">Free
+                            Ruler</span></button>
+
+                    <div class="form-check form-switch small mb-2">
+                        <input class="form-check-input" type="checkbox" id="showGrid" onchange="toggleGrid()">
+                        <label class="form-check-label text-light" for="showGrid" data-i18n="show_grid">Show
+                            Grid</label>
+                    </div>
+                    <div class="form-check form-switch small mb-2">
+                        <input class="form-check-input" type="checkbox" id="snapGrid" onchange="toggleSnap()">
+                        <label class="form-check-label text-light" for="snapGrid" data-i18n="snap_grid">Snap to
+                            Grid</label>
+                    </div>
+                    <div class="form-check form-switch small mb-3">
+                        <input class="form-check-input" type="checkbox" id="snapWall" onchange="toggleSnapWall()">
+                        <label class="form-check-label text-light" for="snapWall" data-i18n="snap_walls">Snap to
+                            Walls</label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <label class="small text-secondary mb-0 w-100" data-i18n="grid_size">Grid/Snap Size:</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control" id="gridSize" value="25"
+                                oninput="toggleGrid(); toggleSnap();">
+                            <span class="input-group-text bg-secondary border-secondary">cm</span>
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch small">
+                        <input class="form-check-input" type="checkbox" id="showDist" onchange="updateDistances()">
+                        <label class="form-check-label text-light" for="showDist" data-i18n="auto_dims">Auto
+                            Dimensions</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3 shadow-sm border-primary">
+                <div class="card-body p-3">
+                    <h6 class="card-title fw-bold text-primary mb-3"><i class="bi bi-box-seam me-2"></i><span
+                            data-i18n="new_obj">New Object</span></h6>
+                    <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm" id="objName" data-i18n-ph="name_ph"
+                            placeholder="Name (e.g., Table)">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-3">
+                            <label class="form-label small mb-0 text-secondary">W (cm)</label>
+                            <input type="number" class="form-control form-control-sm" id="objW" value="100">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label small mb-0 text-secondary">L (cm)</label>
+                            <input type="number" class="form-control form-control-sm" id="objH" value="100">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label small mb-0 text-secondary" data-i18n="layer">Layer</label>
+                            <input type="number" class="form-control form-control-sm text-center" id="objLayer"
+                                value="1">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label small mb-0 text-secondary" data-i18n="color">Color</label>
+                            <input type="color"
+                                class="form-control form-control-color form-control-sm w-100 px-1 color-picker-sm"
+                                id="objColor" value="#baffc9">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm w-100 fw-bold" onclick="addObject()"
+                        data-i18n="create_obj">Create Object</button>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-info">
+                <div class="card-body p-3">
+                    <h6 class="card-title fw-bold text-info mb-3"><i class="bi bi-door-open me-2"></i><span
+                            data-i18n="structures">Structures</span></h6>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small mb-0 text-secondary" data-i18n="type">Type</label>
+                            <select class="form-select form-select-sm" id="fixType">
+                                <option value="window" data-i18n="window">Window</option>
+                                <option value="door" data-i18n="door">Door</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-0 text-secondary" data-i18n="wall">Wall</label>
+                            <select class="form-select form-select-sm" id="fixWall">
+                                <option value="top" data-i18n="top">Top</option>
+                                <option value="bottom" data-i18n="bottom">Bottom</option>
+                                <option value="left" data-i18n="left">Left</option>
+                                <option value="right" data-i18n="right">Right</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small mb-0 text-secondary" data-i18n="size">Size (cm)</label>
+                        <input type="number" class="form-control form-control-sm" id="fixSize" value="80">
+                    </div>
+                    <button class="btn btn-info text-dark btn-sm w-100 fw-bold" onclick="addFixture()"
+                        data-i18n="add_wall">Add to Wall</button>
+                </div>
+            </div>
+
+        </aside>
+
+        <main class="canvas-container" id="canvasContainer">
+            <div id="roomWrapper">
+                <div id="room">
+                    <svg id="distOverlay"
+                        style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 15; overflow:visible;"></svg>
+                    <svg id="rulerOverlay"
+                        style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 9999; overflow:visible;"></svg>
+                </div>
+            </div>
+        </main>
+
+        <aside class="sidebar-right">
+            <div class="flex-grow-1 d-flex flex-column overflow-hidden">
+                <div class="bg-dark text-light p-2 border-bottom border-secondary fw-bold text-center"
+                    style="font-size: 0.85rem; letter-spacing: 1px;" data-i18n="inspector">
+                    OBJECT INSPECTOR
+                </div>
+                <div class="p-2 overflow-y-auto flex-grow-1" id="objectList"></div>
+                <div class="p-2 overflow-y-auto border-top border-secondary" id="fixtureList" style="max-height: 30%;">
+                </div>
+            </div>
+
+            <div class="border-top"
+                style="height: 250px; background-color: #1e1e1e; display: flex; flex-direction: column;">
+                <div class="bg-dark text-light p-2 border-bottom border-secondary fw-bold text-center"
+                    style="font-size: 0.85rem; letter-spacing: 1px;" data-i18n="layers_panel">
+                    LAYERS
+                </div>
+                <div class="p-2 overflow-y-auto flex-grow-1" id="layersList"></div>
+            </div>
+        </aside>
+
+    </div>
+
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title fw-bold" data-i18n="settings_title"><i class="bi bi-gear me-2"></i>Settings
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-secondary" data-i18n="language">Language / Idioma</label>
+                        <select class="form-select bg-dark text-light border-secondary" id="langSelect"
+                            onchange="changeLanguage(this.value)">
+                            <option value="en">English (US)</option>
+                            <option value="pt-br">Português (Brasil)</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="it">Italiano</option>
+                            <option value="nl">Nederlands</option>
+                            <option value="pl">Polski</option>
+                            <option value="sv">Svenska</option>
+                            <option value="ru">Русский</option>
+                            <option value="cs">Čeština</option>
+                            <option value="ro">Română</option>
+                            <option value="el">Ελληνικά</option>
+                            <option value="da">Dansk</option>
+                            <option value="fi">Suomi</option>
+                            <option value="hu">Magyar</option>
+                            <option value="pt-pt">Português (Portugal)</option>
+                            <option value="uk">Українська</option>
+                            <option value="tr">Türkçe</option>
+                            <option value="zh">中文 (Mandarin)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // --- INTERNATIONALIZATION (i18n) ---
+        const translations = {
+            'en': {
+                'app_title': '2D Room Planner', 'save': 'Save', 'import': 'Import', 'total_area': 'Total Area:', 'occupied': 'Occupied:', 'free': 'Free:',
+                'zoom': 'Zoom:', 'room_dim': 'Room Dimensions', 'width': 'Width (cm)', 'length': 'Length (cm)', 'tools': 'Tools',
+                'ruler': 'Free Ruler', 'show_grid': 'Show Grid', 'snap_grid': 'Snap to Grid', 'snap_walls': 'Snap to Walls',
+                'grid_size': 'Grid/Snap Size:', 'auto_dims': 'Auto Dimensions', 'new_obj': 'New Object', 'name_ph': 'Name (e.g., Table)',
+                'layer': 'Layer', 'color': 'Color', 'create_obj': 'Create Object', 'structures': 'Structures', 'type': 'Type',
+                'window': 'Window', 'door': 'Door', 'wall': 'Wall', 'top': 'Top', 'bottom': 'Bottom', 'left': 'Left', 'right': 'Right',
+                'size': 'Size (cm)', 'add_wall': 'Add to Wall', 'inspector': 'OBJECT INSPECTOR', 'layers_panel': 'LAYERS',
+                'settings_title': 'Settings', 'language': 'Language / Idioma', 'empty_obj': 'No objects added.', 'empty_layer': 'No layers active.',
+                'rotate': 'Rotate'
+            },
+            'pt-br': {
+                'app_title': 'Projetor de Cômodos 2D', 'save': 'Salvar', 'import': 'Importar', 'total_area': 'Área Total:', 'occupied': 'Ocupada:', 'free': 'Livre:',
+                'zoom': 'Zoom:', 'room_dim': 'Dimensões do Quarto', 'width': 'Largura (cm)', 'length': 'Comprimento (cm)', 'tools': 'Ferramentas',
+                'ruler': 'Régua Livre', 'show_grid': 'Mostrar Grade', 'snap_grid': 'Imã à Grade', 'snap_walls': 'Imã às Paredes',
+                'grid_size': 'Tamanho Imã/Grade:', 'auto_dims': 'Cotas Automáticas', 'new_obj': 'Novo Objeto', 'name_ph': 'Nome (Ex: Mesa)',
+                'layer': 'Camada', 'color': 'Cor', 'create_obj': 'Criar Objeto', 'structures': 'Estruturas Fixas', 'type': 'Tipo',
+                'window': 'Janela', 'door': 'Porta', 'wall': 'Parede', 'top': 'Superior', 'bottom': 'Inferior', 'left': 'Esquerda', 'right': 'Direita',
+                'size': 'Tamanho (cm)', 'add_wall': 'Adicionar à Parede', 'inspector': 'INSPETOR DE OBJETOS', 'layers_panel': 'CAMADAS',
+                'settings_title': 'Configurações', 'language': 'Idioma', 'empty_obj': 'Nenhum objeto adicionado.', 'empty_layer': 'Nenhuma camada ativa.',
+                'rotate': 'Rotacionar'
+            },
+            'pt-pt': {
+                'app_title': 'Planeador de Divisões 2D', 'save': 'Guardar', 'import': 'Importar', 'total_area': 'Área Total:', 'occupied': 'Ocupada:', 'free': 'Livre:',
+                'zoom': 'Zoom:', 'room_dim': 'Dimensões da Divisão', 'width': 'Largura (cm)', 'length': 'Comprimento (cm)', 'tools': 'Ferramentas',
+                'ruler': 'Régua Livre', 'show_grid': 'Mostrar Grelha', 'snap_grid': 'Atrair à Grelha', 'snap_walls': 'Atrair às Paredes',
+                'grid_size': 'Tamanho da Grelha:', 'auto_dims': 'Cotas Automáticas', 'new_obj': 'Novo Objeto', 'name_ph': 'Nome (Ex: Mesa)',
+                'layer': 'Camada', 'color': 'Cor', 'create_obj': 'Criar Objeto', 'structures': 'Estruturas', 'type': 'Tipo',
+                'window': 'Janela', 'door': 'Porta', 'wall': 'Parede', 'top': 'Cima', 'bottom': 'Baixo', 'left': 'Esquerda', 'right': 'Direita',
+                'size': 'Tamanho (cm)', 'add_wall': 'Adicionar à Parede', 'inspector': 'INSPETOR DE OBJETOS', 'layers_panel': 'CAMADAS',
+                'settings_title': 'Definições', 'language': 'Idioma', 'empty_obj': 'Nenhum objeto adicionado.', 'empty_layer': 'Nenhuma camada ativa.',
+                'rotate': 'Rodar'
+            },
+            'es': {
+                'app_title': 'Planificador de Cuartos 2D', 'save': 'Guardar', 'import': 'Importar', 'total_area': 'Área Total:', 'occupied': 'Ocupada:', 'free': 'Libre:',
+                'zoom': 'Zoom:', 'room_dim': 'Dimensiones del Cuarto', 'width': 'Ancho (cm)', 'length': 'Largo (cm)', 'tools': 'Herramientas',
+                'ruler': 'Regla Libre', 'show_grid': 'Mostrar Cuadrícula', 'snap_grid': 'Ajustar a Cuadrícula', 'snap_walls': 'Ajustar a Paredes',
+                'grid_size': 'Tamaño Cuadrícula:', 'auto_dims': 'Cotas Automáticas', 'new_obj': 'Nuevo Objeto', 'name_ph': 'Nombre (Ej: Mesa)',
+                'layer': 'Capa', 'color': 'Color', 'create_obj': 'Crear Objeto', 'structures': 'Estructuras', 'type': 'Tipo',
+                'window': 'Ventana', 'door': 'Puerta', 'wall': 'Pared', 'top': 'Arriba', 'bottom': 'Abajo', 'left': 'Izquierda', 'right': 'Derecha',
+                'size': 'Tamaño (cm)', 'add_wall': 'Añadir a Pared', 'inspector': 'INSPECTOR DE OBJETOS', 'layers_panel': 'CAPAS',
+                'settings_title': 'Ajustes', 'language': 'Idioma', 'empty_obj': 'Ningún objeto añadido.', 'empty_layer': 'Ninguna capa activa.',
+                'rotate': 'Rotar'
+            },
+            'fr': {
+                'app_title': 'Planificateur de Pièce 2D', 'save': 'Sauvegarder', 'import': 'Importer', 'total_area': 'Surface Totale:', 'occupied': 'Occupée:', 'free': 'Libre:',
+                'zoom': 'Zoom:', 'room_dim': 'Dimensions de la Pièce', 'width': 'Largeur (cm)', 'length': 'Longueur (cm)', 'tools': 'Outils',
+                'ruler': 'Règle Libre', 'show_grid': 'Afficher Grille', 'snap_grid': 'Accrocher à la Grille', 'snap_walls': 'Accrocher aux Murs',
+                'grid_size': 'Taille de la Grille:', 'auto_dims': 'Cotes Automatiques', 'new_obj': 'Nouvel Objet', 'name_ph': 'Nom (ex: Table)',
+                'layer': 'Calque', 'color': 'Couleur', 'create_obj': 'Créer Objet', 'structures': 'Structures', 'type': 'Type',
+                'window': 'Fenêtre', 'door': 'Porte', 'wall': 'Mur', 'top': 'Haut', 'bottom': 'Bas', 'left': 'Gauche', 'right': 'Droite',
+                'size': 'Taille (cm)', 'add_wall': 'Ajouter au Mur', 'inspector': 'INSPECTEUR D\'OBJETS', 'layers_panel': 'CALQUES',
+                'settings_title': 'Paramètres', 'language': 'Langue', 'empty_obj': 'Aucun objet ajouté.', 'empty_layer': 'Aucun calque actif.',
+                'rotate': 'Pivoter'
+            },
+            'de': {
+                'app_title': '2D Raumplaner', 'save': 'Speichern', 'import': 'Importieren', 'total_area': 'Gesamtfläche:', 'occupied': 'Belegt:', 'free': 'Frei:',
+                'zoom': 'Zoom:', 'room_dim': 'Raummaße', 'width': 'Breite (cm)', 'length': 'Länge (cm)', 'tools': 'Werkzeuge',
+                'ruler': 'Freies Lineal', 'show_grid': 'Raster anzeigen', 'snap_grid': 'Am Raster ausrichten', 'snap_walls': 'An Wänden ausrichten',
+                'grid_size': 'Rastergröße:', 'auto_dims': 'Auto-Bemaßung', 'new_obj': 'Neues Objekt', 'name_ph': 'Name (z.B. Tisch)',
+                'layer': 'Ebene', 'color': 'Farbe', 'create_obj': 'Objekt Erstellen', 'structures': 'Strukturen', 'type': 'Typ',
+                'window': 'Fenster', 'door': 'Tür', 'wall': 'Wand', 'top': 'Oben', 'bottom': 'Unten', 'left': 'Links', 'right': 'Rechts',
+                'size': 'Größe (cm)', 'add_wall': 'Zur Wand hinzufügen', 'inspector': 'OBJEKT-INSPEKTOR', 'layers_panel': 'EBENEN',
+                'settings_title': 'Einstellungen', 'language': 'Sprache', 'empty_obj': 'Keine Objekte hinzugefügt.', 'empty_layer': 'Keine Ebenen aktiv.',
+                'rotate': 'Drehen'
+            },
+            'it': {
+                'app_title': 'Pianificatore Stanza 2D', 'save': 'Salva', 'import': 'Importa', 'total_area': 'Area Totale:', 'occupied': 'Occupata:', 'free': 'Libera:',
+                'zoom': 'Zoom:', 'room_dim': 'Dimensioni Stanza', 'width': 'Larghezza (cm)', 'length': 'Lunghezza (cm)', 'tools': 'Strumenti',
+                'ruler': 'Righello Libero', 'show_grid': 'Mostra Griglia', 'snap_grid': 'Allinea alla Griglia', 'snap_walls': 'Allinea ai Muri',
+                'grid_size': 'Dim. Griglia:', 'auto_dims': 'Quote Automatiche', 'new_obj': 'Nuovo Oggetto', 'name_ph': 'Nome (es: Tavolo)',
+                'layer': 'Livello', 'color': 'Colore', 'create_obj': 'Crea Oggetto', 'structures': 'Strutture', 'type': 'Tipo',
+                'window': 'Finestra', 'door': 'Porta', 'wall': 'Muro', 'top': 'Sopra', 'bottom': 'Sotto', 'left': 'Sinistra', 'right': 'Destra',
+                'size': 'Dimensione (cm)', 'add_wall': 'Aggiungi al Muro', 'inspector': 'ISPETTORE OGGETTI', 'layers_panel': 'LIVELLI',
+                'settings_title': 'Impostazioni', 'language': 'Lingua', 'empty_obj': 'Nessun oggetto aggiunto.', 'empty_layer': 'Nessun livello attivo.',
+                'rotate': 'Ruota'
+            },
+            'nl': {
+                'app_title': '2D Kamerplanner', 'save': 'Opslaan', 'import': 'Importeren', 'total_area': 'Totale Oppervl.:', 'occupied': 'Bezet:', 'free': 'Vrij:',
+                'zoom': 'Zoom:', 'room_dim': 'Kamerafmetingen', 'width': 'Breedte (cm)', 'length': 'Lengte (cm)', 'tools': 'Gereedschap',
+                'ruler': 'Vrije Liniaal', 'show_grid': 'Raster Tonen', 'snap_grid': 'Uitlijnen op Raster', 'snap_walls': 'Uitlijnen op Muren',
+                'grid_size': 'Rastergrootte:', 'auto_dims': 'Auto Afmetingen', 'new_obj': 'Nieuw Object', 'name_ph': 'Naam (bijv. Tafel)',
+                'layer': 'Laag', 'color': 'Kleur', 'create_obj': 'Object Maken', 'structures': 'Structuren', 'type': 'Type',
+                'window': 'Raam', 'door': 'Deur', 'wall': 'Muur', 'top': 'Boven', 'bottom': 'Onder', 'left': 'Links', 'right': 'Rechts',
+                'size': 'Grootte (cm)', 'add_wall': 'Aan Muur Toevoegen', 'inspector': 'OBJECT INSPECTEUR', 'layers_panel': 'LAGEN',
+                'settings_title': 'Instellingen', 'language': 'Taal', 'empty_obj': 'Geen objecten toegevoegd.', 'empty_layer': 'Geen actieve lagen.',
+                'rotate': 'Draaien'
+            },
+            'pl': {
+                'app_title': 'Planer Pokoju 2D', 'save': 'Zapisz', 'import': 'Importuj', 'total_area': 'Pow. Calkowita:', 'occupied': 'Zajęta:', 'free': 'Wolna:',
+                'zoom': 'Zoom:', 'room_dim': 'Wymiary Pokoju', 'width': 'Szerokość (cm)', 'length': 'Długość (cm)', 'tools': 'Narzędzia',
+                'ruler': 'Wolna Linijka', 'show_grid': 'Pokaż Siatkę', 'snap_grid': 'Do Siatki', 'snap_walls': 'Do Ścian',
+                'grid_size': 'Rozmiar Siatki:', 'auto_dims': 'Auto Wymiary', 'new_obj': 'Nowy Obiekt', 'name_ph': 'Nazwa (np. Stół)',
+                'layer': 'Warstwa', 'color': 'Kolor', 'create_obj': 'Utwórz Obiekt', 'structures': 'Struktury', 'type': 'Typ',
+                'window': 'Okno', 'door': 'Drzwi', 'wall': 'Ściana', 'top': 'Góra', 'bottom': 'Dół', 'left': 'Lewo', 'right': 'Prawo',
+                'size': 'Rozmiar (cm)', 'add_wall': 'Dodaj do Ściany', 'inspector': 'INSPEKTOR OBIEKTÓW', 'layers_panel': 'WARSTWY',
+                'settings_title': 'Ustawienia', 'language': 'Język', 'empty_obj': 'Brak dodanych obiektów.', 'empty_layer': 'Brak aktywnych warstw.',
+                'rotate': 'Obróć'
+            },
+            'sv': {
+                'app_title': '2D Rumsplanerare', 'save': 'Spara', 'import': 'Importera', 'total_area': 'Total Yta:', 'occupied': 'Upptagen:', 'free': 'Ledig:',
+                'zoom': 'Zoom:', 'room_dim': 'Rumsdimensioner', 'width': 'Bredd (cm)', 'length': 'Längd (cm)', 'tools': 'Verktyg',
+                'ruler': 'Fri Linjal', 'show_grid': 'Visa Rutnät', 'snap_grid': 'Fäst mot Rutnät', 'snap_walls': 'Fäst mot Väggar',
+                'grid_size': 'Rutnätsstorlek:', 'auto_dims': 'Auto-Mått', 'new_obj': 'Nytt Objekt', 'name_ph': 'Namn (t.ex. Bord)',
+                'layer': 'Lager', 'color': 'Färg', 'create_obj': 'Skapa Objekt', 'structures': 'Strukturer', 'type': 'Typ',
+                'window': 'Fönster', 'door': 'Dörr', 'wall': 'Vägg', 'top': 'Topp', 'bottom': 'Botten', 'left': 'Vänster', 'right': 'Höger',
+                'size': 'Storlek (cm)', 'add_wall': 'Lägg till på Vägg', 'inspector': 'OBJEKTINSPEKTÖR', 'layers_panel': 'LAGER',
+                'settings_title': 'Inställningar', 'language': 'Språk', 'empty_obj': 'Inga objekt tillagda.', 'empty_layer': 'Inga aktiva lager.',
+                'rotate': 'Rotera'
+            },
+            'ru': {
+                'app_title': '2D Планировщик', 'save': 'Сохранить', 'import': 'Импорт', 'total_area': 'Общая Площадь:', 'occupied': 'Занято:', 'free': 'Свободно:',
+                'zoom': 'Масштаб:', 'room_dim': 'Размеры Комнаты', 'width': 'Ширина (см)', 'length': 'Длина (см)', 'tools': 'Инструменты',
+                'ruler': 'Линейка', 'show_grid': 'Показать Сетку', 'snap_grid': 'Привязка к Сетке', 'snap_walls': 'Привязка к Стенам',
+                'grid_size': 'Размер Сетки:', 'auto_dims': 'Авто-Размеры', 'new_obj': 'Новый Объект', 'name_ph': 'Название (напр. Стол)',
+                'layer': 'Слой', 'color': 'Цвет', 'create_obj': 'Создать Объект', 'structures': 'Структуры', 'type': 'Тип',
+                'window': 'Окно', 'door': 'Дверь', 'wall': 'Стена', 'top': 'Верх', 'bottom': 'Низ', 'left': 'Лево', 'right': 'Право',
+                'size': 'Размер (см)', 'add_wall': 'На Стену', 'inspector': 'ИНСПЕКТОР ОБЪЕКТОВ', 'layers_panel': 'СЛОИ',
+                'settings_title': 'Настройки', 'language': 'Язык', 'empty_obj': 'Нет объектов.', 'empty_layer': 'Нет активных слоев.',
+                'rotate': 'Повернуть'
+            }
+        };
+
+        let currentLang = 'en';
+
+        function t(key) {
+            const langDict = translations[currentLang] || translations['en'];
+            return langDict[key] || translations['en'][key] || key;
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerText = t(key);
+            });
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                const key = el.getAttribute('data-i18n-ph');
+                el.placeholder = t(key);
+            });
+            updateSidebarLists();
+            updateLayersPanel();
+        }
+
+        // --- ESTADO GLOBAL ---
+        let room = { w: 400, h: 300 };
+        let scale = 1;
+        let objects = [];
+        let fixtures = [];
+        let objectIdCounter = 0;
+        let fixtureIdCounter = 0;
+
+        let historyStack = [];
+        let historyIndex = -1;
+        let hiddenLayers = new Set();
+
+        let selectedObjects = new Set();
+        let dragGroup = [];
+        let draggedFixture = null;
+        let dragType = null;
+        let startMouseX = 0, startMouseY = 0;
+        let snapGridSize = 25;
+        let isSnap = false, isSnapWall = false;
+        let rulerMode = false, rulerStart = null;
+
+        const roomEl = document.getElementById('room');
+        const roomWrapper = document.getElementById('roomWrapper');
+        const objectListEl = document.getElementById('objectList');
+        const fixtureListEl = document.getElementById('fixtureList');
+        const distOverlay = document.getElementById('distOverlay');
+        const rulerOverlay = document.getElementById('rulerOverlay');
+        const layersListEl = document.getElementById('layersList');
+
+        function init() {
+            changeLanguage('en');
+            updateRoom(false);
+            saveState();
+
+            document.addEventListener('mousemove', handleDrag);
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('keydown', handleKeys);
+
+            roomEl.addEventListener('mousedown', (e) => {
+                if (rulerMode) {
+                    const rect = roomEl.getBoundingClientRect();
+                    rulerStart = { x: (e.clientX - rect.left) / scale, y: (e.clientY - rect.top) / scale };
+                } else if (e.target === roomEl) {
+                    selectedObjects.clear();
+                    renderObjectsStyle();
+                }
+            });
+        }
+
+        // --- HISTÓRICO (UNDO/REDO) ---
+        function cloneState() {
+            return {
+                room: { ...room },
+                objects: objects.map(o => ({ ...o, el: null })),
+                fixtures: fixtures.map(f => ({ ...f, el: null, dim1El: null, dim2El: null, span1: null, span2: null }))
+            };
+        }
+
+        function saveState() {
+            const current = cloneState();
+            if (historyIndex < historyStack.length - 1) historyStack = historyStack.slice(0, historyIndex + 1);
+            historyStack.push(current);
+            historyIndex++;
+            updateLayersPanel();
+        }
+
+        function restoreState(stateData) {
+            // Restore Core Data
+            room = { ...stateData.room };
+            objects = (stateData.objects || []).map(o => ({ ...o, el: null }));
+            fixtures = (stateData.fixtures || []).map(f => ({ ...f, el: null, dim1El: null, dim2El: null }));
+
+            selectedObjects.clear();
+            objectIdCounter = objects.length > 0 ? Math.max(...objects.map(o => o.id)) + 1 : 0;
+            fixtureIdCounter = fixtures.length > 0 ? Math.max(...fixtures.map(f => f.id)) + 1 : 0;
+
+            document.getElementById('roomW').value = room.w;
+            document.getElementById('roomH').value = room.h;
+
+            // Restore Metadata / Settings se existirem (para o import)
+            if (stateData.projectName) {
+                document.getElementById('projectName').value = stateData.projectName;
+            }
+            if (stateData.settings) {
+                document.getElementById('gridSize').value = stateData.settings.gridSize || 25;
+                document.getElementById('showGrid').checked = !!stateData.settings.showGrid;
+                document.getElementById('snapGrid').checked = !!stateData.settings.snapGrid;
+                document.getElementById('snapWall').checked = !!stateData.settings.snapWall;
+                document.getElementById('showDist').checked = !!stateData.settings.showDist;
+
+                toggleGrid();
+                toggleSnap();
+                toggleSnapWall();
+
+                if (stateData.settings.language) {
+                    document.getElementById('langSelect').value = stateData.settings.language;
+                    changeLanguage(stateData.settings.language);
+                }
+            }
+
+            updateRoom(false);
+            updateLayersPanel();
+        }
+
+        function undo() { if (historyIndex > 0) { historyIndex--; restoreState(historyStack[historyIndex]); } }
+        function redo() { if (historyIndex < historyStack.length - 1) { historyIndex++; restoreState(historyStack[historyIndex]); } }
+
+        function handleKeys(e) {
+            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+            if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (selectedObjects.size > 0 && !['INPUT', 'SELECT'].includes(e.target.tagName)) {
+                    objects = objects.filter(o => !selectedObjects.has(o.id));
+                    selectedObjects.clear();
+                    renderObjects(); updateSidebarLists(); saveState();
+                }
+            }
+        }
+
+        function exportProject() {
+            // Captura o estado atual + configurações do app
+            const projectData = cloneState();
+
+            const projName = document.getElementById('projectName').value.trim() || "new project";
+            projectData.projectName = projName;
+
+            projectData.settings = {
+                language: currentLang,
+                showGrid: document.getElementById('showGrid').checked,
+                snapGrid: document.getElementById('snapGrid').checked,
+                snapWall: document.getElementById('snapWall').checked,
+                gridSize: document.getElementById('gridSize').value,
+                showDist: document.getElementById('showDist').checked
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData));
+            const a = document.createElement('a');
+            a.href = dataStr;
+            a.download = `${projName.replace(/\s+/g, '_')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        function importProject(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    restoreState(data);
+                    saveState();
+                    document.getElementById('importFile').value = '';
+                }
+                catch (err) { alert("Error importing project."); }
+            };
+            reader.readAsText(file);
+        }
+
+        function setZoom(factor) { scale *= factor; if (scale < 0.1) scale = 0.1; if (scale > 5) scale = 5; applyZoom(); }
+        function applyZoom() {
+            document.getElementById('zoomVal').innerText = Math.round(scale * 100) + '%';
+            roomEl.style.transform = `scale(${scale})`;
+            roomWrapper.style.width = (room.w * scale) + 'px';
+            roomWrapper.style.height = (room.h * scale) + 'px';
+        }
+
+        function toggleGrid() {
+            const show = document.getElementById('showGrid').checked;
+            const size = parseInt(document.getElementById('gridSize').value) || 25;
+            if (show) {
+                roomEl.style.backgroundImage = `linear-gradient(to right, #bbb 1px, transparent 1px), linear-gradient(to bottom, #bbb 1px, transparent 1px)`;
+                roomEl.style.backgroundSize = `${size}px ${size}px`;
+            } else { roomEl.style.backgroundImage = 'none'; }
+        }
+
+        function toggleSnap() { isSnap = document.getElementById('snapGrid').checked; snapGridSize = parseInt(document.getElementById('gridSize').value) || 25; }
+        function toggleSnapWall() { isSnapWall = document.getElementById('snapWall').checked; }
+
+        function updateRoom(recordHistory = false) {
+            room.w = parseInt(document.getElementById('roomW').value) || 100;
+            room.h = parseInt(document.getElementById('roomH').value) || 100;
+            roomEl.style.width = room.w + 'px'; roomEl.style.height = room.h + 'px';
+            checkCollisions(); renderFixtures(); toggleGrid(); applyZoom(); updateDistances(); updateArea();
+            if (recordHistory) saveState();
+        }
+
+        function updateArea() {
+            const tot = (room.w * room.h) / 10000;
+            let occ = 0;
+            objects.forEach(o => { if (!hiddenLayers.has(o.layer)) occ += (o.w * o.h) / 10000; });
+            document.getElementById('areaTotal').innerText = tot.toFixed(2);
+            document.getElementById('areaOcc').innerText = occ.toFixed(2);
+            document.getElementById('areaFree').innerText = Math.max(0, tot - occ).toFixed(2);
+        }
+
+        function toggleRuler() {
+            rulerMode = !rulerMode;
+            document.getElementById('btnRuler').classList.toggle('active', rulerMode);
+            document.body.classList.toggle('ruler-active', rulerMode);
+            if (!rulerMode) rulerOverlay.innerHTML = '';
+        }
+
+        function updateLayersPanel() {
+            const layerSet = new Set(objects.map(o => o.layer));
+            const layers = Array.from(layerSet).sort((a, b) => b - a);
+            layersListEl.innerHTML = '';
+
+            if (layers.length === 0) {
+                layersListEl.innerHTML = `<div class="text-muted small text-center mt-3">${t('empty_layer')}</div>`;
+                return;
+            }
+            layers.forEach(l => {
+                const isHidden = hiddenLayers.has(l);
+                const div = document.createElement('div');
+                div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 rounded layer-item bg-dark border border-secondary shadow-sm';
+                div.innerHTML = `
+                    <span class="fw-bold small text-light"><i class="bi bi-stack me-2 text-secondary"></i>${t('layer')} ${l}</span>
+                    <button class="btn btn-sm ${isHidden ? 'btn-outline-secondary' : 'btn-outline-light'}" onclick="toggleLayer(${l})">
+                        <i class="bi bi-eye${isHidden ? '-slash text-muted' : '-fill'}"></i>
+                    </button>
+                `;
+                layersListEl.appendChild(div);
+            });
+        }
+
+        function toggleLayer(l) {
+            if (hiddenLayers.has(l)) hiddenLayers.delete(l);
+            else { hiddenLayers.add(l); objects.filter(o => o.layer === l).forEach(o => selectedObjects.delete(o.id)); }
+            renderObjects(); updateLayersPanel(); updateArea(); updateSidebarLists();
+        }
+
+        function addObject() {
+            const name = document.getElementById('objName').value || t('new_obj');
+            const w = parseInt(document.getElementById('objW').value) || 50;
+            const h = parseInt(document.getElementById('objH').value) || 50;
+            const color = document.getElementById('objColor').value;
+            const layer = parseInt(document.getElementById('objLayer').value) || 1;
+
+            if (hiddenLayers.has(layer)) hiddenLayers.delete(layer);
+            objects.push({ id: objectIdCounter++, name, w, h, color, layer, locked: false, x: room.w / 2 - w / 2, y: room.h / 2 - h / 2, el: null });
+            renderObjects(); updateSidebarLists(); saveState();
+        }
+
+        function rotateObject(id) {
+            const obj = objects.find(o => o.id === id);
+            if (obj && !obj.locked) { const t = obj.w; obj.w = obj.h; obj.h = t; renderObjects(); updateSidebarLists(); saveState(); }
+        }
+
+        function removeObject(id) { objects = objects.filter(o => o.id !== id); selectedObjects.delete(id); renderObjects(); updateSidebarLists(); saveState(); }
+
+        function updateObjectProp(id, prop, value) {
+            const obj = objects.find(o => o.id === id); if (!obj) return;
+            if (prop === 'w' || prop === 'h') value = parseInt(value) || 10;
+            if (prop === 'layer') { value = parseInt(value) || 1; if (hiddenLayers.has(value)) hiddenLayers.delete(value); }
+            obj[prop] = value;
+            renderObjects(); updateLayersPanel(); updateArea(); saveState();
+        }
+
+        function toggleLock(id) { const obj = objects.find(o => o.id === id); if (obj) { obj.locked = !obj.locked; renderObjects(); updateSidebarLists(); saveState(); } }
+
+        function addFixture() {
+            const type = document.getElementById('fixType').value;
+            const wall = document.getElementById('fixWall').value;
+            const size = parseInt(document.getElementById('fixSize').value) || 80;
+            let pos = (wall === 'top' || wall === 'bottom') ? room.w / 2 - size / 2 : room.h / 2 - size / 2;
+            fixtures.push({ id: fixtureIdCounter++, type, wall, size, pos, thickness: 12, flip: false, el: null });
+            renderFixtures(); updateSidebarLists(); saveState();
+        }
+
+        function removeFixture(id) { fixtures = fixtures.filter(f => f.id !== id); renderFixtures(); updateSidebarLists(); saveState(); }
+        function flipFixture(id) { const fix = fixtures.find(f => f.id === id); if (fix && fix.type === 'door') { fix.flip = !fix.flip; renderFixtures(); saveState(); } }
+        function updateFixtureSize(id, val) { const fix = fixtures.find(f => f.id === id); if (fix) { fix.size = parseInt(val) || 50; renderFixtures(); saveState(); } }
+
+        function renderObjectsStyle() { objects.forEach(obj => { if (obj.el) obj.el.classList.toggle('selected-obj', selectedObjects.has(obj.id)); }); }
+
+        function renderObjects() {
+            document.querySelectorAll('.room-object').forEach(el => el.remove());
+            objects.forEach(obj => {
+                if (hiddenLayers.has(obj.layer)) return;
+                const div = document.createElement('div');
+                div.className = 'room-object' + (selectedObjects.has(obj.id) ? ' selected-obj' : '');
+                div.style.width = obj.w + 'px'; div.style.height = obj.h + 'px'; div.style.left = obj.x + 'px'; div.style.top = obj.y + 'px';
+                div.style.backgroundColor = obj.color; div.style.zIndex = 10 + obj.layer;
+                const hex = obj.color.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16), g = parseInt(hex.substr(2, 2), 16), b = parseInt(hex.substr(4, 2), 16);
+                const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                div.style.color = (yiq >= 128) ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)';
+                div.innerHTML = `${obj.locked ? '<i class="bi bi-lock-fill position-absolute top-0 start-0 m-1" style="font-size:0.6rem"></i>' : ''} ${obj.name}`;
+                div.addEventListener('mousedown', (e) => startDrag(e, obj, 'object'));
+                obj.el = div; roomEl.appendChild(div);
+            });
+            checkCollisions(); updateDistances(); updateArea();
+        }
+
+        function getDoorSVG(wall, size, flip) {
+            let path = '', leaf = '', pos = ''; const s = size;
+            if (wall === 'top') {
+                pos = `top: 6px; left: 0;`;
+                if (!flip) { leaf = `<line x1="0" y1="0" x2="0" y2="${s}" stroke="#2c3e50" stroke-width="3" />`; path = `<path d="M 0 0 L 0 ${s} A ${s} ${s} 0 0 0 ${s} 0 Z" fill="rgba(240,173,78,0.3)" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="4" />`; }
+                else { leaf = `<line x1="${s}" y1="0" x2="${s}" y2="${s}" stroke="#2c3e50" stroke-width="3" />`; path = `<path d="M ${s} 0 L ${s} ${s} A ${s} ${s} 0 0 1 0 0 Z" fill="rgba(240,173,78,0.3)" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="4" />`; }
+            } else if (wall === 'bottom') {
+                pos = `bottom: 6px; left: 0;`;
+                if (!flip) { leaf = `<line x1="0" y1="${s}" x2="0" y2="0" stroke="#2c3e50" stroke-width="3" />`; path = `<path d="M 0 ${s} L 0 0 A ${s} ${s} 0 0 1 ${s} ${s} Z" fill="rgba(240,173,78,0.3)" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="4" />`; }
+                else { leaf = `<line x1="${s}" y1="${s}" x2="${s}" y2="0" stroke="#2c3e50" stroke-width="3" />`; path = `<path d="M ${s} ${s} L ${s} 0 A ${s} ${s} 0 0 0 0 ${s} Z" fill="rgba(240,173,78,0.3)" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="4" />`; }
+            } else if (wall === 'left') {
+                pos = `left: 6px; top: 0;`;
+                if (!flip) { leaf = `<line x1="0" y1="0" x2="${s}" y2="0" stroke="#2c3e50" stroke-width="3" />`; path = `<path d="M 0 0 L ${s} 0 A ${s} ${s} 0 0 1 0 ${s} Z" fill="rgba(240,173,78,0.3)" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="4" />`; }
+                else { leaf = `<line x1="0" y1="${s}" x2="${s}" y2="${s}" stroke="#2c3e50" stroke-width="3" />`; path = `<path d="M 0 ${s} L ${s} ${s} A ${s} ${s} 0 0 0 0 0 Z" fill="rgba(240,173,78,0.3)" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="4" />`; }
+            } else if (wall === 'right') {
+                pos = `right: 6px; top: 0;`;
+                if (!flip) { leaf = `<line x1="${s}" y1="0" x2="0" y2="0" stroke="#2c3e50" stroke-width="3" />`; path = `<path d="M ${s} 0 L 0 0 A ${s} ${s} 0 0 0 ${s} ${s} Z" fill="rgba(240,173,78,0.3)" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="4" />`; }
+                else { leaf = `<line x1="${s}" y1="${s}" x2="0" y2="${s}" stroke="#2c3e50" stroke-width="3" />`; path = `<path d="M ${s} ${s} L 0 ${s} A ${s} ${s} 0 0 1 ${s} 0 Z" fill="rgba(240,173,78,0.3)" stroke="#2c3e50" stroke-width="1.5" stroke-dasharray="4" />`; }
+            }
+            return `<svg class="door-svg" width="${s}" height="${s}" style="position:absolute; ${pos} pointer-events:none; overflow:visible;">${path}${leaf}</svg>`;
+        }
+
+        function updateFixtureStyle(fix) {
+            if (!fix.el) return;
+            fix.el.style.left = ''; fix.el.style.right = ''; fix.el.style.top = ''; fix.el.style.bottom = '';
+            const t = fix.thickness, s = fix.size, p = fix.pos;
+            if (fix.wall === 'top') { fix.el.style.width = s + 'px'; fix.el.style.height = t + 'px'; fix.el.style.left = p + 'px'; fix.el.style.top = (-t / 2) + 'px'; }
+            else if (fix.wall === 'bottom') { fix.el.style.width = s + 'px'; fix.el.style.height = t + 'px'; fix.el.style.left = p + 'px'; fix.el.style.bottom = (-t / 2) + 'px'; }
+            else if (fix.wall === 'left') { fix.el.style.width = t + 'px'; fix.el.style.height = s + 'px'; fix.el.style.left = (-t / 2) + 'px'; fix.el.style.top = p + 'px'; }
+            else if (fix.wall === 'right') { fix.el.style.width = t + 'px'; fix.el.style.height = s + 'px'; fix.el.style.right = (-t / 2) + 'px'; fix.el.style.top = p + 'px'; }
+            fix.el.innerHTML = fix.type === 'door' ? getDoorSVG(fix.wall, fix.size, fix.flip) : t('window');
+        }
+
+        function renderFixtures() {
+            document.querySelectorAll('.fixture').forEach(el => el.remove());
+            document.querySelectorAll('.dim-line').forEach(el => el.remove());
+            fixtures.forEach(fix => {
+                const div = document.createElement('div');
+                div.className = `fixture ${fix.type} shadow-sm`;
+                div.addEventListener('mousedown', (e) => startDrag(e, fix, 'fixture'));
+                fix.el = div; roomEl.appendChild(div); updateFixtureStyle(fix);
+                const dim1 = document.createElement('div'), dim2 = document.createElement('div');
+                const span1 = document.createElement('span'), span2 = document.createElement('span');
+                dim1.appendChild(span1); dim2.appendChild(span2);
+                fix.dim1El = dim1; fix.dim2El = dim2; fix.span1 = span1; fix.span2 = span2;
+                roomEl.appendChild(dim1); roomEl.appendChild(dim2);
+                updateDimLines(fix);
+            });
+            checkCollisions();
+        }
+
+        function updateDimLines(fix) {
+            if (!fix.dim1El || !fix.dim2El) return;
+            const isHoriz = fix.wall === 'top' || fix.wall === 'bottom';
+            const val1 = Math.round(fix.pos), val2 = Math.round((isHoriz ? room.w : room.h) - (fix.pos + fix.size));
+            fix.span1.innerText = val1 + 'cm'; fix.span2.innerText = val2 + 'cm';
+            fix.span1.style.display = val1 < 25 ? 'none' : 'block'; fix.span2.style.display = val2 < 25 ? 'none' : 'block';
+            fix.dim1El.className = 'dim-line ' + (isHoriz ? 'horizontal' : 'vertical');
+            fix.dim2El.className = 'dim-line ' + (isHoriz ? 'horizontal' : 'vertical');
+            const off = 35;
+            if (fix.wall === 'top') { fix.dim1El.style.left = '0'; fix.dim1El.style.width = val1 + 'px'; fix.dim1El.style.top = -off + 'px'; fix.dim2El.style.left = (fix.pos + fix.size) + 'px'; fix.dim2El.style.width = val2 + 'px'; fix.dim2El.style.top = -off + 'px'; }
+            else if (fix.wall === 'bottom') { fix.dim1El.style.left = '0'; fix.dim1El.style.width = val1 + 'px'; fix.dim1El.style.bottom = -off + 'px'; fix.dim2El.style.left = (fix.pos + fix.size) + 'px'; fix.dim2El.style.width = val2 + 'px'; fix.dim2El.style.bottom = -off + 'px'; }
+            else if (fix.wall === 'left') { fix.dim1El.style.top = '0'; fix.dim1El.style.height = val1 + 'px'; fix.dim1El.style.left = -off + 'px'; fix.dim2El.style.top = (fix.pos + fix.size) + 'px'; fix.dim2El.style.height = val2 + 'px'; fix.dim2El.style.left = -off + 'px'; }
+            else if (fix.wall === 'right') { fix.dim1El.style.top = '0'; fix.dim1El.style.height = val1 + 'px'; fix.dim1El.style.right = -off + 'px'; fix.dim2El.style.top = (fix.pos + fix.size) + 'px'; fix.dim2El.style.height = val2 + 'px'; fix.dim2El.style.right = -off + 'px'; }
+        }
+
+        function updateDistances() {
+            distOverlay.innerHTML = '';
+            if (!document.getElementById('showDist').checked) return;
+            let svg = '';
+            objects.forEach(obj => {
+                if (hiddenLayers.has(obj.layer)) return;
+                let d = { top: { y: 0, l: obj.y }, bottom: { y: room.h, l: room.h - (obj.y + obj.h) }, left: { x: 0, l: obj.x }, right: { x: room.w, l: room.w - (obj.x + obj.w) } };
+                objects.forEach(ot => {
+                    if (ot.id === obj.id || ot.layer !== obj.layer || hiddenLayers.has(ot.layer)) return;
+                    if (obj.x < ot.x + ot.w && obj.x + obj.w > ot.x) {
+                        if (ot.y + ot.h <= obj.y) { let v = obj.y - (ot.y + ot.h); if (v < d.top.l) { d.top.y = ot.y + ot.h; d.top.l = v; } }
+                        if (ot.y >= obj.y + obj.h) { let v = ot.y - (obj.y + obj.h); if (v < d.bottom.l) { d.bottom.y = ot.y; d.bottom.l = v; } }
+                    }
+                    if (obj.y < ot.y + ot.h && obj.y + obj.h > ot.y) {
+                        if (ot.x + ot.w <= obj.x) { let v = obj.x - (ot.x + ot.w); if (v < d.left.l) { d.left.x = ot.x + ot.w; d.left.l = v; } }
+                        if (ot.x >= obj.x + obj.w) { let v = ot.x - (obj.x + obj.w); if (v < d.right.l) { d.right.x = ot.x; d.right.l = v; } }
+                    }
+                });
+                const mk = (x1, y1, x2, y2, v) => v <= 0 ? '' : `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#0d6efd" stroke-dasharray="4" stroke-width="1.5"/><rect x="${(x1 + x2) / 2 - 15}" y="${(y1 + y2) / 2 - 8}" width="30" height="16" fill="#252526" rx="3" stroke="#555"/><text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2}" fill="#0d6efd" font-size="10px" font-weight="bold" text-anchor="middle" dominant-baseline="central">${Math.round(v)}</text>`;
+                svg += mk(obj.x + obj.w / 2, obj.y, obj.x + obj.w / 2, d.top.y, d.top.l) + mk(obj.x + obj.w / 2, obj.y + obj.h, obj.x + obj.w / 2, d.bottom.y, d.bottom.l) + mk(obj.x, obj.y + obj.h / 2, d.left.x, obj.y + obj.h / 2, d.left.l) + mk(obj.x + obj.w, obj.y + obj.h / 2, d.right.x, obj.y + obj.h / 2, d.right.l);
+            });
+            distOverlay.innerHTML = svg;
+        }
+
+        function updateSidebarLists() {
+            objectListEl.innerHTML = '';
+            if (objects.length === 0) { objectListEl.innerHTML = `<div class="text-muted small text-center mt-3">${t('empty_obj')}</div>`; }
+            objects.forEach(obj => {
+                const isHidden = hiddenLayers.has(obj.layer);
+                const div = document.createElement('div');
+                div.className = `card mb-2 shadow-sm ${selectedObjects.has(obj.id) ? 'border-primary border-2' : ''}`;
+                div.style.opacity = isHidden ? '0.5' : '1';
+                div.innerHTML = `
+                    <div class="card-body p-2 bg-dark rounded">
+                        <div class="d-flex mb-2 gap-1">
+                            <input type="text" class="form-control form-control-sm fw-bold border-secondary bg-dark text-light flex-fill" value="${obj.name}" onchange="updateObjectProp(${obj.id}, 'name', this.value)">
+                            <button class="btn btn-sm ${obj.locked ? 'btn-danger' : 'btn-outline-secondary'}" onclick="toggleLock(${obj.id})"><i class="bi bi-${obj.locked ? 'lock-fill' : 'unlock'}"></i></button>
+                        </div>
+                        <div class="row g-1 align-items-center">
+                            <div class="col-3"><label class="text-secondary" style="font-size: 0.6rem;">W</label><input type="number" class="form-control form-control-sm px-1 border-secondary bg-dark text-light" value="${obj.w}" onchange="updateObjectProp(${obj.id}, 'w', this.value)"></div>
+                            <div class="col-3"><label class="text-secondary" style="font-size: 0.6rem;">L</label><input type="number" class="form-control form-control-sm px-1 border-secondary bg-dark text-light" value="${obj.h}" onchange="updateObjectProp(${obj.id}, 'h', this.value)"></div>
+                            <div class="col-3"><label class="text-secondary" style="font-size: 0.6rem;">LYR</label><input type="number" class="form-control form-control-sm px-1 text-center border-secondary bg-dark text-light" value="${obj.layer}" onchange="updateObjectProp(${obj.id}, 'layer', this.value)"></div>
+                            <div class="col-3 text-center"><label class="text-secondary" style="font-size: 0.6rem;">CLR</label><input type="color" class="form-control form-control-color w-100 color-picker-sm" value="${obj.color}" onchange="updateObjectProp(${obj.id}, 'color', this.value)"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2 pt-2 border-top border-secondary">
+                            <button class="btn btn-sm btn-outline-warning" onclick="rotateObject(${obj.id})" ${obj.locked ? 'disabled' : ''}><i class="bi bi-arrow-clockwise"></i> ${t('rotate')}</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeObject(${obj.id})"><i class="bi bi-trash3"></i></button>
+                        </div>
+                    </div>`;
+                objectListEl.appendChild(div);
+            });
+
+            fixtureListEl.innerHTML = '';
+            fixtures.forEach(fix => {
+                const div = document.createElement('div');
+                div.className = 'card border-secondary bg-dark mb-2 shadow-sm';
+                div.innerHTML = `
+                    <div class="card-body p-2 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="fw-bold d-block text-light" style="font-size: 0.8rem;">${t(fix.type)} (${t(fix.wall)})</span>
+                            <div class="input-group input-group-sm mt-1" style="width: 100px;">
+                                <input type="number" class="form-control bg-dark text-light border-secondary" value="${fix.size}" onchange="updateFixtureSize(${fix.id}, this.value)"><span class="input-group-text bg-secondary border-secondary text-light">cm</span>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-1 flex-column">
+                            ${fix.type === 'door' ? `<button class="btn btn-sm btn-outline-warning py-0" onclick="flipFixture(${fix.id})"><i class="bi bi-arrow-left-right"></i></button>` : ''}
+                            <button class="btn btn-sm btn-outline-danger py-0" onclick="removeFixture(${fix.id})"><i class="bi bi-trash3"></i></button>
+                        </div>
+                    </div>`;
+                fixtureListEl.appendChild(div);
+            });
+        }
+
+        function startDrag(e, item, type) {
+            if (rulerMode) return;
+            e.preventDefault();
+            if (type === 'object') {
+                if (item.locked || hiddenLayers.has(item.layer)) return;
+                if (e.shiftKey) {
+                    if (selectedObjects.has(item.id)) selectedObjects.delete(item.id); else selectedObjects.add(item.id);
+                } else {
+                    if (!selectedObjects.has(item.id)) { selectedObjects.clear(); selectedObjects.add(item.id); }
+                }
+                renderObjectsStyle();
+                dragType = 'object'; startMouseX = e.clientX; startMouseY = e.clientY; dragGroup = [];
+                selectedObjects.forEach(id => {
+                    const o = objects.find(ob => ob.id === id); if (o && !o.locked) dragGroup.push({ obj: o, startX: o.x, startY: o.y });
+                });
+                draggedItem = dragGroup.find(d => d.obj.id === item.id) || dragGroup[0];
+            } else {
+                dragType = 'fixture'; draggedFixture = { obj: item, startPos: item.pos }; startMouseX = e.clientX; startMouseY = e.clientY;
+            }
+        }
+
+        function handleDrag(e) {
+            if (rulerMode && rulerStart) {
+                const rect = roomEl.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) / scale, my = (e.clientY - rect.top) / scale;
+                const dist = Math.hypot(mx - rulerStart.x, my - rulerStart.y);
+                rulerOverlay.innerHTML = `
+                    <line x1="${rulerStart.x}" y1="${rulerStart.y}" x2="${mx}" y2="${my}" stroke="#0dcaf0" stroke-width="2" stroke-dasharray="5"/>
+                    <circle cx="${rulerStart.x}" cy="${rulerStart.y}" r="4" fill="#0dcaf0"/>
+                    <circle cx="${mx}" cy="${my}" r="4" fill="#0dcaf0"/>
+                    <rect x="${mx + 10}" y="${my - 10}" width="60" height="20" fill="#252526" stroke="#0dcaf0" rx="3"/>
+                    <text x="${mx + 40}" y="${my + 3}" fill="#0dcaf0" font-size="12" font-weight="bold" text-anchor="middle">${dist.toFixed(1)}cm</text>
+                `;
+                return;
+            }
+
+            if (!dragType) return;
+            const dx = (e.clientX - startMouseX) / scale, dy = (e.clientY - startMouseY) / scale;
+
+            if (dragType === 'object' && dragGroup.length > 0) {
+                let effDx = dx, effDy = dy;
+                if (isSnap && draggedItem) {
+                    const snapX = Math.round((draggedItem.startX + dx) / snapGridSize) * snapGridSize;
+                    const snapY = Math.round((draggedItem.startY + dy) / snapGridSize) * snapGridSize;
+                    effDx = snapX - draggedItem.startX; effDy = snapY - draggedItem.startY;
+                }
+                if (isSnapWall && draggedItem) {
+                    const thr = 15; let targetX = draggedItem.startX + effDx, targetY = draggedItem.startY + effDy;
+                    if (targetX < thr) effDx = -draggedItem.startX; else if (targetX + draggedItem.obj.w > room.w - thr) effDx = (room.w - draggedItem.obj.w) - draggedItem.startX;
+                    if (targetY < thr) effDy = -draggedItem.startY; else if (targetY + draggedItem.obj.h > room.h - thr) effDy = (room.h - draggedItem.obj.h) - draggedItem.startY;
+                }
+                dragGroup.forEach(d => { d.obj.x = d.startX + effDx; d.obj.y = d.startY + effDy; d.obj.el.style.left = d.obj.x + 'px'; d.obj.el.style.top = d.obj.y + 'px'; });
+                checkCollisions(); updateDistances();
+            } else if (dragType === 'fixture') {
+                const rect = roomEl.getBoundingClientRect();
+                const mx = (e.clientX - rect.left) / scale, my = (e.clientY - rect.top) / scale;
+                const d = { top: Math.abs(my), bottom: Math.abs(room.h - my), left: Math.abs(mx), right: Math.abs(room.w - mx) };
+                let cWall = 'top', minD = d.top; for (let w in d) if (d[w] < minD) { minD = d[w]; cWall = w; }
+                draggedFixture.obj.wall = cWall;
+                let rawPos = (cWall === 'top' || cWall === 'bottom') ? mx - draggedFixture.obj.size / 2 : my - draggedFixture.obj.size / 2;
+                if (isSnap) rawPos = Math.round(rawPos / snapGridSize) * snapGridSize;
+                const max = (cWall === 'top' || cWall === 'bottom') ? room.w : room.h;
+                draggedFixture.obj.pos = Math.max(0, Math.min(rawPos, max - draggedFixture.obj.size));
+                updateFixtureStyle(draggedFixture.obj); updateDimLines(draggedFixture.obj); checkCollisions();
+            }
+        }
+
+        function stopDrag() {
+            if (rulerMode && rulerStart) { rulerStart = null; return; }
+            if (dragType) {
+                let moved = false;
+                if (dragType === 'object') dragGroup.forEach(d => { if (d.obj.x !== d.startX || d.obj.y !== d.startY) moved = true; });
+                else if (dragType === 'fixture') if (draggedFixture.obj.pos !== draggedFixture.startPos) moved = true;
+                if (moved) saveState();
+                dragType = null; dragGroup = []; draggedFixture = null;
+            }
+        }
+
+        function checkCollisions() {
+            let roomCollision = false; let overlappingObjects = new Set();
+            roomEl.style.borderColor = 'var(--room-border)'; roomEl.style.backgroundColor = 'var(--room-bg)';
+            objects.forEach(obj => { if (obj.el) obj.el.style.backgroundColor = obj.color; });
+            fixtures.forEach(fix => {
+                if (fix.type === 'door' && fix.el) {
+                    fix.el.querySelectorAll('.door-svg path, .door-svg line').forEach(p => p.setAttribute('stroke', '#2c3e50'));
+                    const p = fix.el.querySelector('.door-svg path'); if (p) p.setAttribute('fill', 'rgba(240,173,78,0.3)');
+                }
+            });
+
+            for (let i = 0; i < objects.length; i++) {
+                let o1 = objects[i]; if (hiddenLayers.has(o1.layer)) continue;
+                if (o1.x < 0 || o1.y < 0 || o1.x + o1.w > room.w || o1.y + o1.h > room.h) roomCollision = true;
+                for (let j = i + 1; j < objects.length; j++) {
+                    let o2 = objects[j]; if (hiddenLayers.has(o2.layer)) continue;
+                    if (o1.layer === o2.layer && o1.x < o2.x + o2.w && o1.x + o1.w > o2.x && o1.y < o2.y + o2.h && o1.y + o1.h > o2.y) {
+                        overlappingObjects.add(o1); overlappingObjects.add(o2);
+                    }
+                }
+                fixtures.forEach(fix => {
+                    if (fix.type === 'door') {
+                        let sx, sy, sw = fix.size, sh = fix.size;
+                        if (fix.wall === 'top') { sx = fix.pos; sy = 0; } else if (fix.wall === 'bottom') { sx = fix.pos; sy = room.h - sw; }
+                        else if (fix.wall === 'left') { sx = 0; sy = fix.pos; } else if (fix.wall === 'right') { sx = room.w - sw; sy = fix.pos; }
+                        if (o1.x < sx + sw && o1.x + o1.w > sx && o1.y < sy + sh && o1.y + o1.h > sy) {
+                            overlappingObjects.add(o1);
+                            if (fix.el) {
+                                fix.el.querySelectorAll('.door-svg path, .door-svg line').forEach(p => p.setAttribute('stroke', '#dc3545'));
+                                const p = fix.el.querySelector('.door-svg path'); if (p) p.setAttribute('fill', 'rgba(220,53,69,0.3)');
+                            }
+                        }
+                    }
+                });
+            }
+            if (roomCollision) { roomEl.style.borderColor = '#dc3545'; roomEl.style.backgroundColor = 'var(--danger-bg)'; }
+            overlappingObjects.forEach(obj => { if (obj.el) obj.el.style.backgroundColor = '#dc3545'; });
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
