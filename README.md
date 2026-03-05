@@ -48,16 +48,6 @@ The UI is inspired by professional design software, featuring a dark theme by de
   - _Layers Panel:_ View active layers and toggle their visibility with the eye icon.
 - **Main Canvas:** The interactive grid where the design comes to life.
 
-## ⌨️ Keyboard Shortcuts
-
-| Shortcut               | Action                                   |
-| :--------------------- | :--------------------------------------- |
-| `Click + Drag`         | Move a single object or structure.       |
-| `Shift + Click`        | Add object to current selection group.   |
-| `Ctrl + Z`             | Undo the last action.                    |
-| `Ctrl + Y`             | Redo the last undone action.             |
-| `Delete` / `Backspace` | Delete the currently selected object(s). |
-
 ## 🛠️ Tech Stack
 
 - **HTML5** (Structure and Canvas)
